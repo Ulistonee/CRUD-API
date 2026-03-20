@@ -1,18 +1,11 @@
 import { FastifyReply } from 'fastify';
 import { FastifyInstance } from 'fastify';
 import { Product, productStore } from '../store/product-store';
+import { productBodySchema, ProductBody } from '../schemas/product';
 import { isUuid } from '../utils/utils';
 
 type GetProductParams = {
   productId: string;
-};
-
-type ProductBody = {
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  inStock: boolean;
 };
 
 function resolveProduct(productId: string, reply: FastifyReply): Product | null {
@@ -40,7 +33,11 @@ export async function productsRoutes(app: FastifyInstance) {
   });
 
   app.post<{ Body: ProductBody }>('/products', async (request, reply) => {
-    const { name, description, price, category, inStock } = request.body;
+    const parsed = productBodySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: parsed.error.issues[0].message });
+    }
+    const { name, description, price, category, inStock } = parsed.data;
     const product = productStore.create(name, description, price, category, inStock);
     return reply.code(201).send(product);
   });
@@ -48,7 +45,11 @@ export async function productsRoutes(app: FastifyInstance) {
   app.put<{ Params: GetProductParams; Body: ProductBody }>('/products/:productId', async (request, reply) => {
     const existing = resolveProduct(request.params.productId, reply);
     if (!existing) return;
-    const { name, description, price, category, inStock } = request.body;
+    const parsed = productBodySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: parsed.error.issues[0].message });
+    }
+    const { name, description, price, category, inStock } = parsed.data;
     const product = productStore.update(existing.id, name, description, price, category, inStock);
     return reply.code(200).send(product);
   });
