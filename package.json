@@ -2,7 +2,8 @@
   "scripts": {
     "start:dev": "ts-node-dev --respawn index.ts",
     "start:prod": "tsc && node dist/index.js",
-    "build": "tsc"
+    "build": "tsc",
+    "test": "tsx --test tests/products.test.ts"
   },
   "dependencies": {
     "@fastify/sensible": "^6.0.4",

@@ -1,6 +1,4 @@
-import { log } from 'console';
 import { randomUUID } from 'crypto';
-import { products } from '../utils/utils';
 
 export type Product = {
   id: string;
@@ -10,6 +8,8 @@ export type Product = {
   category: string;
   inStock: boolean;
 };
+
+export const products: Product[] = [];
 
 
 export const productStore = {
@@ -50,5 +50,8 @@ export const productStore = {
     }
     products.splice(products.indexOf(product), 1);
     return product;
+  },
+  clear(): void {
+    products.splice(0, products.length);
   },
 };
