@@ -143,9 +143,6 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:4000/api/pro
 
 After `npm run start:multi`, check the log for worker URLs, e.g.:
 
-- Load balancer: `http://localhost:4000/api`
-- Workers: `http://localhost:4001/api`, `http://localhost:4002/api`, …
-
 You can send requests to the balancer or to individual worker ports; shared state is consistent across workers.
 
 ---
