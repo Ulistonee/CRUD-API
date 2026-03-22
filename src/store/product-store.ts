@@ -11,15 +11,71 @@ export type Product = {
 
 export const products: Product[] = [];
 
+type StoreOperation = 'getAll' | 'getById' | 'create' | 'update' | 'delete' | 'clear';
+
+type StoreRequest = {
+  type: 'store:request';
+  requestId: string;
+  operation: StoreOperation;
+  payload?: unknown;
+};
+
+type StoreResponse = {
+  type: 'store:response';
+  requestId: string;
+  success: boolean;
+  payload?: unknown;
+  error?: string;
+};
+
+function isClusterWorkerStore(): boolean {
+  return process.env.CLUSTER_MODE === 'true' && process.env.CLUSTER_ROLE === 'worker' && typeof process.send === 'function';
+}
+
+function requestStore<T>(operation: StoreOperation, payload?: unknown): Promise<T> {
+  if (!isClusterWorkerStore()) {
+    throw new Error('IPC store is unavailable in non-worker mode.');
+  }
+
+  const requestId = randomUUID();
+  return new Promise<T>((resolve, reject) => {
+    const onMessage = (raw: unknown) => {
+      const message = raw as StoreResponse;
+      if (message?.type !== 'store:response' || message.requestId !== requestId) {
+        return;
+      }
+
+      process.off('message', onMessage);
+      if (message.success) {
+        resolve(message.payload as T);
+      } else {
+        reject(new Error(message.error ?? 'Store operation failed.'));
+      }
+    };
+
+    process.on('message', onMessage);
+    const message: StoreRequest = { type: 'store:request', requestId, operation, payload };
+    process.send?.(message);
+  });
+}
 
 export const productStore = {
-  getAll(): Product[] {
+  async getAll(): Promise<Product[]> {
+    if (isClusterWorkerStore()) {
+      return requestStore<Product[]>('getAll');
+    }
     return products;
   },
-  getById(id: string): Product | undefined {
+  async getById(id: string): Promise<Product | undefined> {
+    if (isClusterWorkerStore()) {
+      return requestStore<Product | undefined>('getById', { id });
+    }
     return products.find((product) => product.id === id);
   },
-  create(name: string, description: string, price: number, category: string, inStock: boolean): Product {
+  async create(name: string, description: string, price: number, category: string, inStock: boolean): Promise<Product> {
+    if (isClusterWorkerStore()) {
+      return requestStore<Product>('create', { name, description, price, category, inStock });
+    }
     const product: Product = {
       id: randomUUID(),
       name,
@@ -31,8 +87,11 @@ export const productStore = {
     products.push(product);
     return product;
   },
-  update(id: string, name: string, description: string, price: number, category: string, inStock: boolean): Product {
-    const product = products.find((product) => product.id === id);
+  async update(id: string, name: string, description: string, price: number, category: string, inStock: boolean): Promise<Product> {
+    if (isClusterWorkerStore()) {
+      return requestStore<Product>('update', { id, name, description, price, category, inStock });
+    }
+    const product = products.find((item) => item.id === id);
     if (!product) {
       throw new Error(`Product with id ${id} not found.`);
     }
@@ -43,15 +102,22 @@ export const productStore = {
     product.inStock = inStock;
     return product;
   },
-  delete(id: string): Product {
-    const product = products.find((product) => product.id === id);
+  async delete(id: string): Promise<Product> {
+    if (isClusterWorkerStore()) {
+      return requestStore<Product>('delete', { id });
+    }
+    const product = products.find((item) => item.id === id);
     if (!product) {
       throw new Error(`Product with id ${id} not found.`);
     }
     products.splice(products.indexOf(product), 1);
     return product;
   },
-  clear(): void {
+  async clear(): Promise<void> {
+    if (isClusterWorkerStore()) {
+      await requestStore<void>('clear');
+      return;
+    }
     products.splice(0, products.length);
   },
 };

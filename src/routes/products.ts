@@ -8,12 +8,12 @@ type GetProductParams = {
   productId: string;
 };
 
-function resolveProduct(productId: string, reply: FastifyReply): Product | null {
+async function resolveProduct(productId: string, reply: FastifyReply): Promise<Product | null> {
   if (!isUuid(productId)) {
     reply.code(400).send({ message: 'Invalid productId. It must be a UUID.' });
     return null;
   }
-  const product = productStore.getById(productId);
+  const product = await productStore.getById(productId);
   if (!product) {
     reply.code(404).send({ message: `Product with id ${productId} not found.` });
     return null;
@@ -23,11 +23,12 @@ function resolveProduct(productId: string, reply: FastifyReply): Product | null 
 
 export async function productsRoutes(app: FastifyInstance) {
   app.get('/products', async (_request, reply) => {
-    return reply.code(200).send(productStore.getAll());
+    const items = await productStore.getAll();
+    return reply.code(200).send(items);
   });
 
   app.get<{ Params: GetProductParams }>('/products/:productId', async (request, reply) => {
-    const product = resolveProduct(request.params.productId, reply);
+    const product = await resolveProduct(request.params.productId, reply);
     if (!product) return;
     return reply.code(200).send(product);
   });
@@ -38,26 +39,26 @@ export async function productsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ message: parsed.error.issues[0].message });
     }
     const { name, description, price, category, inStock } = parsed.data;
-    const product = productStore.create(name, description, price, category, inStock);
+    const product = await productStore.create(name, description, price, category, inStock);
     return reply.code(201).send(product);
   });
 
   app.put<{ Params: GetProductParams; Body: ProductBody }>('/products/:productId', async (request, reply) => {
-    const existing = resolveProduct(request.params.productId, reply);
+    const existing = await resolveProduct(request.params.productId, reply);
     if (!existing) return;
     const parsed = productBodySchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: parsed.error.issues[0].message });
     }
     const { name, description, price, category, inStock } = parsed.data;
-    const product = productStore.update(existing.id, name, description, price, category, inStock);
+    const product = await productStore.update(existing.id, name, description, price, category, inStock);
     return reply.code(200).send(product);
   });
 
   app.delete<{ Params: GetProductParams }>('/products/:productId', async (request, reply) => {
-    const existing = resolveProduct(request.params.productId, reply);
+    const existing = await resolveProduct(request.params.productId, reply);
     if (!existing) return;
-    productStore.delete(existing.id);
+    await productStore.delete(existing.id);
     return reply.code(204).send();
   });
 }

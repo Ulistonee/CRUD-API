@@ -18,8 +18,8 @@ describe('Products API', () => {
     await app.ready();
   });
 
-  afterEach(() => {
-    productStore.clear();
+  afterEach(async () => {
+    await productStore.clear();
   });
 
   describe('Full CRUD flow', () => {
