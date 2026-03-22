@@ -1,13 +1,6 @@
 # CRUD API — Product Catalog
 
-REST API for a simple **Product Catalog** built with [Fastify](https://fastify.dev/). Data is stored **in memory** (single process) or, in **cluster mode**, in the primary process with IPC so all workers share the same state.
-
----
-
-## Requirements
-
-- **Node.js** `24.10.0` or newer (see `.nvmrc` if present)
-- **npm** (comes with Node)
+REST API for a simple **Product Catalog** built with [Fastify](https://fastify.dev/)
 
 ---
 
@@ -33,12 +26,6 @@ REST API for a simple **Product Catalog** built with [Fastify](https://fastify.d
    ```bash
    cp .env.example .env
    ```
-
-   | Variable | Description | Default |
-   |----------|-------------|---------|
-   | `PORT`   | HTTP port for the app (single instance and load balancer base port in multi mode) | `4000` |
-
-   Do **not** commit `.env` (it is listed in `.gitignore`). Commit only `.env.example`.
 
 ---
 
@@ -74,8 +61,6 @@ npm run start:multi
 
 - A **load balancer** listens on `PORT` (e.g. `4000`) at `/api`.
 - **Workers** run Fastify on `PORT + 1`, `PORT + 2`, … (`availableParallelism() - 1` workers).
-- Requests to the load balancer are distributed in **round-robin** order.
-- If the port range `PORT … PORT + workerCount` is busy, the process picks the **next free block** of ports and logs a warning.
 
 Stop a previous run before starting another, or rely on automatic port shifting (see logs).
 
