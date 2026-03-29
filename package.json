@@ -1,0 +1,27 @@
+{
+  "scripts": {
+    "start:dev": "ts-node-dev --respawn index.ts",
+    "start:prod": "tsc && node dist/index.js",
+    "start:multi": "tsc && node dist/src/cluster.js",
+    "build": "tsc",
+    "test": "tsx --test tests/products.test.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "fastify": "^5.8.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "eslint": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.1",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
